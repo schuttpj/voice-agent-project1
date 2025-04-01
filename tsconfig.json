@@ -11,7 +11,12 @@
     "outDir": "./dist",
     "rootDir": "./",
     "noEmitOnError": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*"]
+    }
   },
   "include": [
     "api/**/*",
