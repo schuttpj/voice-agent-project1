@@ -49,6 +49,16 @@
       "src": "/api/custom-llm/openai-advanced/chat/completions",
       "dest": "/api/custom-llm/openai-advanced.ts",
       "methods": ["POST"]
+    },
+    {
+      "src": "/api/serve-html",
+      "dest": "/api/serve-html.ts",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/getCharacterInspiration",
+      "dest": "/api/getCharacterInspiration.ts",
+      "methods": ["POST"]
     }
   ]
 }
