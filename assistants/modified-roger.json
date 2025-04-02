@@ -35,7 +35,7 @@
     "provider": "vapi",
     "voiceId": "Cole"
   },
-  "serverUrl": "https://voice-agent-project1-k9o8ywldi-schuttpjs-projects.vercel.app/api/getCharacterInspiration",
+  "serverUrl": "https://voice-agent-project1-b89t5su8f-schuttpjs-projects.vercel.app/api/getCharacterInspiration",
   "firstMessage": "Hello, this is Roger. Do you have a few minutes to chat about how we might be able to help you?",
   "endCallMessage": "Thank you for taking the time to discuss your needs with me today. Our team will be in touch with more information soon. Have a great day!"
 } 
