@@ -5,11 +5,17 @@ import { getCharacterInspiration } from "../functions/getCharacterInspiration";
 const API_SECRET = process.env.API_SECRET || "your-default-secret-token";
 
 export default async (req: VercelRequest, res: VercelResponse) => {
+  console.log("========== REQUEST RECEIVED ==========");
+  console.log("Request method:", req.method);
+  console.log("Request headers:", JSON.stringify(req.headers, null, 2));
+  console.log("Request body:", JSON.stringify(req.body, null, 2));
+  
   try {
     // Check for authentication
     const token = req.headers["x-vapi-signature"];
     
     if (!token || token !== API_SECRET) {
+      console.log("Authentication failed. Token:", token);
       return res.status(401).json({ error: "Unauthorized: Invalid or missing authentication token" });
     }
 
@@ -17,8 +23,11 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     const { inspiration, assistantName } = req.body;
     
     if (!inspiration) {
+      console.log("Missing required parameter: inspiration");
       return res.status(400).json({ error: "Missing required parameter: inspiration" });
     }
+
+    console.log(`Processing request with inspiration: "${inspiration}" and assistantName: "${assistantName || 'default'}"`);
 
     // Call the function with optional assistantName
     const result = await getCharacterInspiration({ 
@@ -27,6 +36,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     });
     
     // Return the result
+    console.log("Result generated successfully:", JSON.stringify(result).substring(0, 100) + "...");
+    console.log("========== REQUEST COMPLETED ==========");
     return res.status(200).json(result);
   } catch (error) {
     console.error("Error processing request:", error);
