@@ -1,33 +1,50 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { getCharacterInspiration } from "../functions/getCharacterInspiration";
 
-// A simple secret token for authentication
-const API_SECRET = process.env.API_SECRET || "your-default-secret-token";
+// Environment variables
+const API_SECRET = process.env.API_SECRET || "vapi-voice-agent-secret";
+const ENVIRONMENT = process.env.ENVIRONMENT || "development";
+const IS_DEV = ENVIRONMENT === "development";
 
 export default async (req: VercelRequest, res: VercelResponse) => {
-  console.log("========== REQUEST RECEIVED ==========");
-  console.log("Request method:", req.method);
-  console.log("Request headers:", JSON.stringify(req.headers, null, 2));
-  console.log("Request body:", JSON.stringify(req.body, null, 2));
+  // Add CORS headers in development mode
+  if (IS_DEV) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-vapi-signature");
+    
+    // Handle preflight requests
+    if (req.method === "OPTIONS") {
+      return res.status(200).end();
+    }
+  }
+
+  console.log(`[${ENVIRONMENT}] ========== REQUEST RECEIVED ==========`);
+  console.log(`[${ENVIRONMENT}] Request method:`, req.method);
+  console.log(`[${ENVIRONMENT}] Request headers:`, JSON.stringify(req.headers, null, 2));
+  console.log(`[${ENVIRONMENT}] Request body:`, JSON.stringify(req.body, null, 2));
   
   try {
-    // Check for authentication
+    // Check for authentication - skip in development if needed
     const token = req.headers["x-vapi-signature"];
     
-    if (!token || token !== API_SECRET) {
-      console.log("Authentication failed. Token:", token);
-      return res.status(401).json({ error: "Unauthorized: Invalid or missing authentication token" });
+    if (!IS_DEV && (!token || token !== API_SECRET)) {
+      console.log(`[${ENVIRONMENT}] Authentication failed. Token:`, token);
+      return res.status(401).json({ 
+        error: "Unauthorized: Invalid or missing authentication token",
+        expectedToken: IS_DEV ? API_SECRET : undefined // Only show expected token in dev
+      });
     }
 
     // Process the request
     const { inspiration, assistantName } = req.body;
     
     if (!inspiration) {
-      console.log("Missing required parameter: inspiration");
+      console.log(`[${ENVIRONMENT}] Missing required parameter: inspiration`);
       return res.status(400).json({ error: "Missing required parameter: inspiration" });
     }
 
-    console.log(`Processing request with inspiration: "${inspiration}" and assistantName: "${assistantName || 'default'}"`);
+    console.log(`[${ENVIRONMENT}] Processing request with inspiration: "${inspiration}" and assistantName: "${assistantName || 'default'}"`);
 
     // Call the function with optional assistantName
     const result = await getCharacterInspiration({ 
@@ -36,14 +53,17 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     });
     
     // Return the result
-    console.log("Result generated successfully:", JSON.stringify(result).substring(0, 100) + "...");
-    console.log("========== REQUEST COMPLETED ==========");
+    console.log(`[${ENVIRONMENT}] Result generated successfully:`, JSON.stringify(result).substring(0, 100) + "...");
+    console.log(`[${ENVIRONMENT}] ========== REQUEST COMPLETED ==========`);
     return res.status(200).json(result);
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error(`[${ENVIRONMENT}] Error processing request:`, error);
+    
+    // Provide more detailed error information in development
     return res.status(500).json({ 
       error: "Internal server error", 
-      message: error instanceof Error ? error.message : "Unknown error" 
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: IS_DEV && error instanceof Error ? error.stack : undefined
     });
   }
 }; 

@@ -1,1 +1,355 @@
-<!DOCTYPE html><html><head><title>Multi-Assistant Demo</title></head><body><h1>Multi-Assistant Demo</h1><div><div id="victor-card"><h2>Victor - Character Inspiration</h2><p>Help with character ideas</p><button id="talk-to-victor">Talk to Victor</button><div id="victor-status"></div></div><div id="roger-card"><h2>Roger - Business Development</h2><p>Help with business development</p><button id="talk-to-roger">Talk to Roger</button><div id="roger-status"></div></div></div><script src="https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js"></script><script>document.getElementById("talk-to-victor").onclick=function(){vapiSDK.run({apiKey:"f27a9656-0e77-4a48-8bd8-7310c05a13c3",assistant:{model:{provider:"openai",model:"gpt-4o",functions:[{name:"getCharacterInspiration",parameters:{type:"object",properties:{inspiration:{type:"string"},assistantName:{type:"string",default:"Victor"}},required:["inspiration"]}}]},serverUrl:"/api/getCharacterInspiration",headers:{"x-vapi-signature":"vapi-voice-agent-secret"}},config:{position:"bottom-right"}})};document.getElementById("talk-to-roger").onclick=function(){vapiSDK.run({apiKey:"f27a9656-0e77-4a48-8bd8-7310c05a13c3",assistant:{model:{provider:"openai",model:"gpt-4o",functions:[{name:"getCharacterInspiration",parameters:{type:"object",properties:{inspiration:{type:"string"},assistantName:{type:"string",default:"Roger"}},required:["inspiration"]}}]},serverUrl:"/api/getCharacterInspiration",headers:{"x-vapi-signature":"vapi-voice-agent-secret"}},config:{position:"bottom-left"}})};</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Assistant Demo</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .assistant-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .assistant-card.dev {
+      border-left: 4px solid #ff6b6b;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .environment-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      background-color: #ff6b6b;
+      color: white;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    h2 {
+      color: #444;
+      margin-top: 0;
+    }
+    p {
+      color: #666;
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .talk-button {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .talk-button:hover {
+      background-color: #45a049;
+    }
+    .info-button {
+      background-color: #2196F3;
+      color: white;
+    }
+    .info-button:hover {
+      background-color: #0b7dda;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      display: none;
+    }
+    .debug-panel {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .debug-panel h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .debug-log {
+      height: 150px;
+      overflow-y: auto;
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Multi-Assistant Demo <span id="env-badge" class="environment-badge">DEVELOPMENT</span></h1>
+  
+  <div class="container">
+    <div class="assistant-card dev" id="victor-card">
+      <h2>Victor - Character Inspiration Assistant</h2>
+      <p>Victor helps authors develop character ideas and storylines. He can suggest character traits, backgrounds, and potential plot points based on your inspirations.</p>
+      <div class="buttons">
+        <button class="talk-button" id="talk-to-victor">Talk to Victor</button>
+        <button class="info-button" onclick="showInfo('victor')">Assistant Info</button>
+      </div>
+      <div class="status" id="victor-status"></div>
+    </div>
+
+    <div class="assistant-card dev" id="roger-card">
+      <h2>Roger - Lead Generation Assistant</h2>
+      <p>Roger helps with business development and lead generation. He can discuss your company's solutions, identify business challenges, and connect potential clients with sales representatives.</p>
+      <div class="buttons">
+        <button class="talk-button" id="talk-to-roger">Talk to Roger</button>
+        <button class="info-button" onclick="showInfo('roger')">Assistant Info</button>
+      </div>
+      <div class="status" id="roger-status"></div>
+    </div>
+
+    <div class="debug-panel" id="debug-panel">
+      <h3>Debug Panel</h3>
+      <p>This panel shows development debug information. It will not appear in production.</p>
+      <div class="debug-log" id="debug-log"></div>
+    </div>
+  </div>
+
+  <script>
+    // Environment configuration
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const environment = isLocalhost ? 'development' : 'production';
+    const baseUrl = isLocalhost ? 'http://localhost:3000' : '';
+    
+    // Update UI based on environment
+    document.getElementById('env-badge').textContent = environment.toUpperCase();
+    if (environment === 'production') {
+      document.getElementById('env-badge').style.backgroundColor = '#28a745';
+      document.getElementById('debug-panel').style.display = 'none';
+      Array.from(document.querySelectorAll('.assistant-card')).forEach(card => {
+        card.classList.remove('dev');
+      });
+    }
+
+    // Debug logger
+    function logDebug(message) {
+      if (environment === 'development') {
+        const debugLog = document.getElementById('debug-log');
+        const timestamp = new Date().toLocaleTimeString();
+        debugLog.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        debugLog.scrollTop = debugLog.scrollHeight;
+      }
+    }
+
+    // Status tracking elements
+    const victorStatus = document.getElementById('victor-status');
+    const rogerStatus = document.getElementById('roger-status');
+    
+    // Helper function to show assistant info
+    function showInfo(assistantName) {
+      const statusElement = assistantName === 'victor' ? victorStatus : rogerStatus;
+      const name = assistantName === 'victor' ? 'Victor' : 'Roger';
+      const position = assistantName === 'victor' ? 'bottom-right' : 'bottom-left';
+      
+      statusElement.innerHTML = `
+        <h3>${name} Configuration</h3>
+        <p><strong>Position:</strong> ${position}</p>
+        <p><strong>Environment:</strong> ${environment}</p>
+        <p><strong>API Endpoint:</strong> ${baseUrl}/api/getCharacterInspiration</p>
+      `;
+      statusElement.style.display = 'block';
+      
+      logDebug(`Displayed info for ${name}`);
+    }
+
+    // Load Vapi SDK
+    function loadVapiSDK() {
+      return new Promise((resolve, reject) => {
+        if (window.vapiSDK) {
+          logDebug('Vapi SDK already loaded');
+          resolve(window.vapiSDK);
+          return;
+        }
+
+        logDebug('Loading Vapi SDK...');
+        const script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js";
+        script.onload = () => {
+          logDebug('Vapi SDK loaded successfully');
+          victorStatus.innerHTML = "<p>SDK loaded successfully</p>";
+          victorStatus.style.display = 'block';
+          resolve(window.vapiSDK);
+        };
+        script.onerror = (err) => {
+          const errorMsg = 'Failed to load Vapi SDK';
+          logDebug(errorMsg);
+          victorStatus.innerHTML = `<p>Error: ${errorMsg}</p>`;
+          victorStatus.style.display = 'block';
+          reject(err);
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    // Call Victor
+    document.getElementById('talk-to-victor').addEventListener('click', async function() {
+      victorStatus.innerHTML = "<p>Initializing Victor...</p>";
+      victorStatus.style.display = 'block';
+      logDebug('Initializing Victor...');
+      
+      try {
+        const vapiSDK = await loadVapiSDK();
+        
+        vapiSDK.run({
+          apiKey: "f27a9656-0e77-4a48-8bd8-7310c05a13c3",
+          assistant: {
+            model: {
+              provider: "openai",
+              model: "gpt-4o",
+              systemPrompt: "You are Victor, an AI assistant who helps authors develop character ideas",
+              functions: [{
+                name: "getCharacterInspiration",
+                description: "Provides character inspiration based on a query",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    inspiration: {
+                      type: "string",
+                      description: "The query for character inspiration"
+                    },
+                    assistantName: {
+                      type: "string",
+                      description: "The assistant name",
+                      default: "Victor"
+                    }
+                  },
+                  required: ["inspiration"]
+                }
+              }]
+            },
+            voice: {
+              provider: "11labs",
+              voiceId: "arthur"
+            },
+            serverUrl: `${baseUrl}/api/getCharacterInspiration`,
+            headers: {
+              "x-vapi-signature": "vapi-voice-agent-secret"
+            },
+            firstMessage: "Hello, I'm Victor. How can I help with your character ideas?"
+          },
+          config: {
+            position: "bottom-right",
+            idle: { color: "#5DFECA" },
+            active: { color: "#FF0000" }
+          }
+        });
+        
+        victorStatus.innerHTML = "<p>Call initiated with Victor</p>";
+        logDebug('Victor call initiated');
+      } catch (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        victorStatus.innerHTML = `<p>Error: ${errorMsg}</p>`;
+        logDebug(`Victor error: ${errorMsg}`);
+        console.error("Victor error:", error);
+      }
+    });
+
+    // Call Roger
+    document.getElementById('talk-to-roger').addEventListener('click', async function() {
+      rogerStatus.innerHTML = "<p>Initializing Roger...</p>";
+      rogerStatus.style.display = 'block';
+      logDebug('Initializing Roger...');
+      
+      try {
+        const vapiSDK = await loadVapiSDK();
+        
+        vapiSDK.run({
+          apiKey: "f27a9656-0e77-4a48-8bd8-7310c05a13c3",
+          assistant: {
+            model: {
+              provider: "openai",
+              model: "gpt-4o",
+              systemPrompt: "You are Roger, a virtual business development assistant",
+              functions: [{
+                name: "getCharacterInspiration",
+                description: "Provides business information",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    inspiration: {
+                      type: "string",
+                      description: "The business query"
+                    },
+                    assistantName: {
+                      type: "string",
+                      description: "The assistant name",
+                      default: "Roger"
+                    }
+                  },
+                  required: ["inspiration"]
+                }
+              }]
+            },
+            voice: {
+              provider: "vapi",
+              voiceId: "Cole"
+            },
+            serverUrl: `${baseUrl}/api/getCharacterInspiration`,
+            headers: {
+              "x-vapi-signature": "vapi-voice-agent-secret"
+            },
+            firstMessage: "Hello, this is Roger. How can I help with your business needs?"
+          },
+          config: {
+            position: "bottom-left",
+            idle: { color: "#4287F5" },
+            active: { color: "#FF0000" }
+          }
+        });
+        
+        rogerStatus.innerHTML = "<p>Call initiated with Roger</p>";
+        logDebug('Roger call initiated');
+      } catch (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        rogerStatus.innerHTML = `<p>Error: ${errorMsg}</p>`;
+        logDebug(`Roger error: ${errorMsg}`);
+        console.error("Roger error:", error);
+      }
+    });
+
+    // Initialize the page
+    (function init() {
+      logDebug(`Initialized in ${environment} mode`);
+      logDebug(`API endpoint: ${baseUrl}/api/getCharacterInspiration`);
+      
+      // Load SDK in background
+      loadVapiSDK().catch(err => {
+        console.error('Failed to pre-load Vapi SDK:', err);
+      });
+    })();
+  </script>
+</body>
+</html>
