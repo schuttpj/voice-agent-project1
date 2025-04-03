@@ -37,3 +37,9 @@ yarn-error.log*
 
 # do not ignore public directory needed for frontend
 !public/
+
+# Environment files with secrets
+.env
+.env.development
+.env.production
+.env.local
