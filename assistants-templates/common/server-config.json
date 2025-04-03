@@ -1,0 +1,8 @@
+{
+  "serverUrl": "https://voice-agent-project1-k9o8ywldi-schuttpjs-projects.vercel.app/api/getAssistantResponse",
+  "localServerUrl": "http://localhost:3000/api/getAssistantResponse",
+  "headers": {
+    "x-vapi-signature": "7d51b737-e34b-4777-b485-ba387cf24c50"
+  },
+  "apiKey": "f27a9656-0e77-4a48-8bd8-7310c05a13c3"
+} 

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vapi Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    .test-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Vapi SDK Test</h1>
+  
+  <div class="test-section">
+    <h2>Test 1: Configure Assistant</h2>
+    <p>Test using an assistant configuration object</p>
+    <button id="test-config-button">Test Config</button>
+    <div id="status"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test 2: Assistant ID</h2>
+    <p>Test using an assistant ID (enter your assistant ID below)</p>
+    <input type="text" id="assistant-id" placeholder="Your assistant ID from Vapi Dashboard">
+    <button id="test-id-button">Test with ID</button>
+  </div>
+
+  <script>
+    // Status element
+    const status = document.getElementById('status');
+    status.innerHTML = '<p>Page loaded</p>';
+    
+    // Try both with and without prefix
+    const keyOptions = [
+      "f27a9656-0e77-4a48-8bd8-7310c05a13c3", 
+      "public_f27a9656-0e77-4a48-8bd8-7310c05a13c3"
+    ];
+    let currentKeyIndex = 0;
+    
+    // Load Vapi SDK
+    function loadVapiSDK() {
+      return new Promise((resolve, reject) => {
+        if (window.vapiSDK) {
+          console.log('Vapi SDK already loaded');
+          status.innerHTML += '<p>SDK already loaded</p>';
+          resolve(window.vapiSDK);
+          return;
+        }
+
+        console.log('Loading Vapi SDK...');
+        status.innerHTML += '<p>Loading SDK...</p>';
+        
+        const script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js";
+        script.onload = () => {
+          console.log('Vapi SDK loaded successfully');
+          status.innerHTML += '<p>SDK loaded successfully</p>';
+          resolve(window.vapiSDK);
+        };
+        script.onerror = (err) => {
+          const errorMsg = 'Failed to load Vapi SDK';
+          console.error(errorMsg, err);
+          status.innerHTML += `<p>Error: ${errorMsg}</p>`;
+          reject(err);
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    // Test with configuration
+    document.getElementById('test-config-button').addEventListener('click', async function() {
+      try {
+        const vapiSDK = await loadVapiSDK();
+        const currentKey = keyOptions[currentKeyIndex];
+        
+        status.innerHTML += `<p>Testing with key: ${currentKey}</p>`;
+        console.log(`Testing with key: ${currentKey}`);
+        
+        vapiSDK.run({
+          apiKey: currentKey,
+          assistant: {
+            model: {
+              provider: "openai",
+              model: "gpt-3.5-turbo",
+              systemPrompt: "You're a test assistant"
+            },
+            voice: {
+              provider: "11labs",
+              voiceId: "arthur"
+            },
+            firstMessage: "This is a test message."
+          },
+          config: {
+            position: "bottom-right"
+          }
+        });
+        
+        status.innerHTML += '<p>Call initiated with configuration</p>';
+        console.log('Call initiated with configuration');
+        
+        // Switch to the other key for next test
+        currentKeyIndex = (currentKeyIndex + 1) % keyOptions.length;
+      } catch (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        status.innerHTML += `<p>Error: ${errorMsg}</p>`;
+        console.error("Error:", error);
+      }
+    });
+    
+    // Test with assistant ID
+    document.getElementById('test-id-button').addEventListener('click', async function() {
+      try {
+        const vapiSDK = await loadVapiSDK();
+        const currentKey = keyOptions[currentKeyIndex];
+        const assistantId = document.getElementById('assistant-id').value.trim();
+        
+        if (!assistantId) {
+          status.innerHTML += '<p>Error: Please enter an assistant ID</p>';
+          return;
+        }
+        
+        status.innerHTML += `<p>Testing with key: ${currentKey} and assistant ID: ${assistantId}</p>`;
+        console.log(`Testing with key: ${currentKey} and assistant ID: ${assistantId}`);
+        
+        vapiSDK.run({
+          apiKey: currentKey,
+          assistant: assistantId,
+          config: {
+            position: "bottom-right"
+          }
+        });
+        
+        status.innerHTML += '<p>Call initiated with assistant ID</p>';
+        console.log('Call initiated with assistant ID');
+        
+        // Switch to the other key for next test
+        currentKeyIndex = (currentKeyIndex + 1) % keyOptions.length;
+      } catch (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        status.innerHTML += `<p>Error: ${errorMsg}</p>`;
+        console.error("Error:", error);
+      }
+    });
+
+    // Preload SDK
+    loadVapiSDK().catch(console.error);
+  </script>
+</body>
+</html> 

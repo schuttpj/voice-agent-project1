@@ -1,0 +1,21 @@
+{
+  "position": "bottom-right", 
+  "offset": "40px", 
+  "width": "60px", 
+  "height": "60px", 
+  "idle": {
+    "color": "#4287F5",
+    "type": "round", 
+    "icon": "https://unpkg.com/lucide-static@0.321.0/icons/phone.svg"
+  },
+  "loading": {
+    "color": "#92b4f3",
+    "type": "round", 
+    "icon": "https://unpkg.com/lucide-static@0.321.0/icons/loader-2.svg"
+  },
+  "active": {
+    "color": "#ff0000",
+    "type": "round", 
+    "icon": "https://unpkg.com/lucide-static@0.321.0/icons/phone-off.svg"
+  }
+} 

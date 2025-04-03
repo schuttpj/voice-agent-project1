@@ -1,0 +1,10 @@
+{
+  "assistants": [
+    {
+      "id": "roger",
+      "name": "Roger",
+      "path": "Roger",
+      "description": "Business development assistant for qualifying leads and understanding customer needs."
+    }
+  ]
+} 

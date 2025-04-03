@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Inline Assistant Demo</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card.dev {
+      border-left: 4px solid #ff6b6b;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .environment-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      background-color: #ff6b6b;
+      color: white;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    h2 {
+      color: #444;
+      margin-top: 0;
+    }
+    p {
+      color: #666;
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .action-button {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .action-button:hover {
+      background-color: #45a049;
+    }
+    .config-button {
+      background-color: #2196F3;
+      color: white;
+    }
+    .config-button:hover {
+      background-color: #0b7dda;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    .debug-panel {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .debug-panel h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .debug-log {
+      height: 300px;
+      overflow-y: auto;
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 300px;
+    }
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    .tab-button {
+      padding: 8px 16px;
+      cursor: pointer;
+      background-color: #f1f1f1;
+      border: none;
+      outline: none;
+    }
+    .tab-button.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+    }
+    .assistant-info {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+    }
+    #assistant-description {
+      font-style: italic;
+      color: #666;
+    }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,0.3);
+      border-radius: 50%;
+      border-top-color: #4CAF50;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Dynamic Inline Assistant <span id="env-badge" class="environment-badge">DEVELOPMENT</span></h1>
+  
+  <div class="container">
+    <div class="card dev">
+      <h2>Assistant Selector</h2>
+      <p>Select an assistant from the dropdown and click "Talk" to initiate a conversation.</p>
+
+      <div class="form-group">
+        <label for="assistant-select">Select Assistant:</label>
+        <select id="assistant-select">
+          <option value="">Loading assistants...</option>
+        </select>
+        <div class="assistant-info">
+          <div id="assistant-description">Please select an assistant to view details.</div>
+        </div>
+      </div>
+
+      <div class="tab-buttons">
+        <button class="tab-button active" onclick="showTab('instructions')">Instructions</button>
+        <button class="tab-button" onclick="showTab('config')">Configuration</button>
+        <button class="tab-button" onclick="showTab('logs')">Logs</button>
+      </div>
+
+      <div id="instructions" class="tab-content">
+        <p>Click the button below to start a conversation with the selected assistant:</p>
+        <div class="buttons">
+          <button class="action-button" id="talk-to-assistant" disabled>Select an assistant first</button>
+          <button class="config-button" id="view-config">View Configuration</button>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div id="config" class="tab-content" style="display:none;">
+        <h3>Configuration Preview</h3>
+        <pre id="config-preview">Select an assistant to view configuration.</pre>
+      </div>
+
+      <div id="logs" class="tab-content" style="display:none;">
+        <div class="debug-panel">
+          <h3>Debug Logs</h3>
+          <div class="debug-log" id="debug-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Environment configuration
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const environment = isLocalhost ? 'development' : 'production';
+    const baseUrl = isLocalhost ? 'http://localhost:3000' : '';
+    
+    // Update UI based on environment
+    document.getElementById('env-badge').textContent = environment.toUpperCase();
+    if (environment === 'production') {
+      document.getElementById('env-badge').style.backgroundColor = '#28a745';
+      Array.from(document.querySelectorAll('.card')).forEach(card => {
+        card.classList.remove('dev');
+      });
+    }
+
+    // Global variables
+    let assistantsList = [];
+    let currentAssistant = null;
+    let currentConfig = null;
+    let serverConfig = null;
+
+    // Tab switching
+    function showTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+      });
+      
+      // Remove active class from all buttons
+      document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+      });
+      
+      // Show selected tab
+      document.getElementById(tabName).style.display = 'block';
+      
+      // Add active class to clicked button
+      document.querySelector(`.tab-button[onclick="showTab('${tabName}')"]`).classList.add('active');
+    }
+
+    // Debug logger
+    function logDebug(message, type = 'info') {
+      const debugLog = document.getElementById('debug-log');
+      const timestamp = new Date().toLocaleTimeString();
+      let styleClass = '';
+      
+      switch(type) {
+        case 'error':
+          styleClass = 'style="color: red; font-weight: bold;"';
+          break;
+        case 'success':
+          styleClass = 'style="color: green; font-weight: bold;"';
+          break;
+        case 'warning':
+          styleClass = 'style="color: orange; font-weight: bold;"';
+          break;
+        default:
+          styleClass = '';
+      }
+      
+      debugLog.innerHTML += `<div ${styleClass}>[${timestamp}] ${message}</div>`;
+      debugLog.scrollTop = debugLog.scrollHeight;
+      console.log(`[${timestamp}] ${message}`);
+    }
+
+    // Status tracking
+    const statusElement = document.getElementById('status');
+    
+    // Helper function to update status
+    function updateStatus(message, isError = false) {
+      statusElement.innerHTML = message;
+      statusElement.style.backgroundColor = isError ? '#ffebee' : '#f9f9f9';
+      statusElement.style.color = isError ? '#d32f2f' : '#333';
+      logDebug(message, isError ? 'error' : 'info');
+    }
+
+    // Load Vapi SDK
+    async function loadVapiSDK() {
+      if (window.vapiSDK) {
+        logDebug('Vapi SDK already loaded');
+        return window.vapiSDK;
+      }
+      
+      logDebug('Loading Vapi SDK...');
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js";
+        script.async = true;
+        script.onload = () => {
+          logDebug('Vapi SDK loaded successfully');
+          resolve(window.vapiSDK);
+        };
+        script.onerror = () => {
+          const error = 'Failed to load Vapi SDK';
+          logDebug(error, 'error');
+          reject(new Error(error));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    // Fetch assistant configurations
+    async function fetchAssistantsList() {
+      try {
+        logDebug('Fetching assistants list...');
+        const response = await fetch(`${baseUrl}/assistants-templates/assistants-list.json`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch assistants list: ${response.status}`);
+        }
+        const data = await response.json();
+        logDebug(`Found ${data.assistants.length} assistants`, 'success');
+        return data.assistants;
+      } catch (error) {
+        logDebug(`Error fetching assistants list: ${error.message}`, 'error');
+        return [];
+      }
+    }
+
+    // Fetch server configuration
+    async function fetchServerConfig() {
+      try {
+        logDebug('Fetching server configuration...');
+        const response = await fetch(`${baseUrl}/assistants-templates/common/server-config.json`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch server config: ${response.status}`);
+        }
+        const data = await response.json();
+        logDebug('Server configuration loaded', 'success');
+        return data;
+      } catch (error) {
+        logDebug(`Error fetching server config: ${error.message}`, 'error');
+        return null;
+      }
+    }
+
+    // Fetch assistant configuration
+    async function fetchAssistantConfig(assistantPath) {
+      try {
+        logDebug(`Fetching configuration for assistant: ${assistantPath}`);
+        
+        // Fetch all configuration files in parallel
+        const [modelConfig, functionsConfig, voiceConfig, buttonConfig, metadata] = await Promise.all([
+          fetch(`${baseUrl}/assistants-templates/${assistantPath}/model-config.json`).then(res => res.json()),
+          fetch(`${baseUrl}/assistants-templates/${assistantPath}/functions-config.json`).then(res => res.json()),
+          fetch(`${baseUrl}/assistants-templates/${assistantPath}/voice-config.json`).then(res => res.json()),
+          fetch(`${baseUrl}/assistants-templates/${assistantPath}/button-config.json`).then(res => res.json()),
+          fetch(`${baseUrl}/assistants-templates/${assistantPath}/metadata.json`).then(res => res.json())
+        ]);
+        
+        // Combine all configurations
+        const assistantConfig = {
+          model: {
+            provider: modelConfig.provider,
+            model: modelConfig.model,
+            temperature: modelConfig.temperature,
+            messages: modelConfig.messages,
+            functions: functionsConfig.functions
+          },
+          voice: voiceConfig.voice,
+          serverUrl: isLocalhost ? serverConfig.localServerUrl : serverConfig.serverUrl,
+          firstMessage: voiceConfig.firstMessage,
+          endCallMessage: voiceConfig.endCallMessage
+        };
+        
+        logDebug(`Configuration loaded for ${metadata.displayName}`, 'success');
+        
+        return {
+          assistant: assistantConfig,
+          button: buttonConfig,
+          metadata: metadata
+        };
+      } catch (error) {
+        logDebug(`Error fetching assistant config: ${error.message}`, 'error');
+        return null;
+      }
+    }
+
+    // Update assistant dropdown
+    function updateAssistantDropdown(assistants) {
+      const select = document.getElementById('assistant-select');
+      select.innerHTML = '';
+      
+      if (assistants.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No assistants available';
+        select.appendChild(option);
+        return;
+      }
+      
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'Select an assistant...';
+      select.appendChild(defaultOption);
+      
+      assistants.forEach(assistant => {
+        const option = document.createElement('option');
+        option.value = assistant.id;
+        option.textContent = assistant.name;
+        option.dataset.path = assistant.path;
+        option.dataset.description = assistant.description;
+        select.appendChild(option);
+      });
+    }
+
+    // Handle assistant selection
+    async function handleAssistantSelection(assistantId) {
+      try {
+        if (!assistantId) {
+          document.getElementById('assistant-description').textContent = 'Please select an assistant to view details.';
+          document.getElementById('config-preview').textContent = 'Select an assistant to view configuration.';
+          document.getElementById('talk-to-assistant').disabled = true;
+          document.getElementById('talk-to-assistant').textContent = 'Select an assistant first';
+          currentAssistant = null;
+          currentConfig = null;
+          return;
+        }
+        
+        const select = document.getElementById('assistant-select');
+        const option = Array.from(select.options).find(opt => opt.value === assistantId);
+        if (!option) return;
+        
+        const assistantPath = option.dataset.path;
+        document.getElementById('assistant-description').textContent = option.dataset.description;
+        
+        // Update button
+        document.getElementById('talk-to-assistant').textContent = `Loading ${option.textContent}...`;
+        document.getElementById('talk-to-assistant').disabled = true;
+        
+        // Fetch assistant configuration
+        const config = await fetchAssistantConfig(assistantPath);
+        if (!config) {
+          throw new Error(`Failed to load configuration for ${option.textContent}`);
+        }
+        
+        // Update preview
+        document.getElementById('config-preview').textContent = JSON.stringify({
+          assistant: config.assistant,
+          config: config.button
+        }, null, 2);
+        
+        // Update button
+        document.getElementById('talk-to-assistant').textContent = `Talk to ${option.textContent}`;
+        document.getElementById('talk-to-assistant').disabled = false;
+        
+        // Store current config
+        currentAssistant = assistantId;
+        currentConfig = config;
+        
+        logDebug(`Selected assistant: ${option.textContent}`, 'success');
+      } catch (error) {
+        updateStatus(`Error: ${error.message}`, true);
+        document.getElementById('talk-to-assistant').textContent = 'Error loading assistant';
+        document.getElementById('talk-to-assistant').disabled = true;
+      }
+    }
+
+    // Call the selected assistant
+    async function callAssistant() {
+      try {
+        if (!currentAssistant || !currentConfig) {
+          throw new Error('No assistant selected');
+        }
+        
+        showTab('logs');
+        updateStatus(`Initializing ${currentConfig.metadata.name}...`);
+        logDebug(`Initializing ${currentConfig.metadata.name} with inline configuration...`);
+        
+        // Check if we're in a secure context
+        if (window.location.protocol !== 'https:' && !isLocalhost) {
+          throw new Error('HTTPS is required for production environment');
+        }
+        
+        const vapiSDK = await loadVapiSDK();
+        if (!vapiSDK) {
+          throw new Error("Failed to initialize Vapi SDK");
+        }
+        
+        logDebug('SDK Initialized, preparing configuration...');
+        
+        // Get API key from server config
+        const apiKey = serverConfig.apiKey;
+        
+        // Log that we're about to start
+        logDebug(`Starting call with server URL: ${currentConfig.assistant.serverUrl}`);
+        logDebug(`API Key: ${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 5)}`);
+        
+        // Debugging info for development
+        if (environment === 'development') {
+          logDebug(`Headers: ${JSON.stringify(serverConfig.headers)}`);
+          logDebug(`Using CORS mode: ${isLocalhost ? 'cors' : 'same-origin'}`);
+        }
+        
+        const vapiInstance = vapiSDK.run({
+          apiKey: apiKey,
+          assistant: currentConfig.assistant,
+          config: currentConfig.button,
+          mode: 'cors',
+          headers: serverConfig.headers
+        });
+        
+        // Add event listeners for debugging
+        vapiInstance.on('call-start', () => {
+          logDebug(`${currentConfig.metadata.name} call has started`, 'success');
+          updateStatus("Call started");
+        });
+        
+        vapiInstance.on('call-end', () => {
+          logDebug(`${currentConfig.metadata.name} call has ended`);
+          updateStatus("Call ended");
+        });
+        
+        vapiInstance.on('error', (error) => {
+          const errorMsg = error.message || JSON.stringify(error);
+          logDebug(`${currentConfig.metadata.name} error event: ${errorMsg}`, 'error');
+          updateStatus(`Error: ${errorMsg}`, true);
+          console.error(`${currentConfig.metadata.name} error event:`, error);
+        });
+        
+        vapiInstance.on('speech-start', () => {
+          logDebug(`${currentConfig.metadata.name} is speaking`);
+        });
+        
+        vapiInstance.on('speech-end', () => {
+          logDebug(`${currentConfig.metadata.name} finished speaking`);
+        });
+        
+        vapiInstance.on('message', (message) => {
+          logDebug(`Message received: ${JSON.stringify(message)}`);
+        });
+        
+        updateStatus(`Call initiated with ${currentConfig.metadata.name}`);
+        logDebug(`${currentConfig.metadata.name} call initiated successfully`, 'success');
+      } catch (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        updateStatus(`Error: ${errorMsg}`, true);
+        logDebug(`Error initializing assistant: ${errorMsg}`, 'error');
+        console.error("Error:", error);
+      }
+    }
+
+    // View configuration button
+    document.getElementById('view-config').addEventListener('click', function() {
+      showTab('config');
+    });
+
+    // Assistant selection change handler
+    document.getElementById('assistant-select').addEventListener('change', function() {
+      handleAssistantSelection(this.value);
+    });
+
+    // Talk to assistant button
+    document.getElementById('talk-to-assistant').addEventListener('click', callAssistant);
+
+    // Initialize the page
+    async function init() {
+      logDebug(`Initialized in ${environment} mode`);
+      
+      // Status message
+      updateStatus(`Loading assistants...`);
+      
+      try {
+        // Load the server configuration first
+        serverConfig = await fetchServerConfig();
+        if (!serverConfig) {
+          throw new Error('Failed to load server configuration');
+        }
+        
+        // Load the assistants list
+        assistantsList = await fetchAssistantsList();
+        updateAssistantDropdown(assistantsList);
+        
+        // Update status
+        updateStatus(`Ready in ${environment} mode. Found ${assistantsList.length} assistants`);
+        
+        // Load SDK in background
+        loadVapiSDK().catch(err => {
+          console.error('Failed to pre-load Vapi SDK:', err);
+        });
+      } catch (error) {
+        updateStatus(`Error initializing: ${error.message}`, true);
+      }
+    }
+    
+    // Start initialization
+    init();
+  </script>
+</body>
+</html> 

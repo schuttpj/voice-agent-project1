@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inline Roger Assistant Demo</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card.dev {
+      border-left: 4px solid #ff6b6b;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .environment-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      background-color: #ff6b6b;
+      color: white;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    h2 {
+      color: #444;
+      margin-top: 0;
+    }
+    p {
+      color: #666;
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .action-button {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .action-button:hover {
+      background-color: #45a049;
+    }
+    .config-button {
+      background-color: #2196F3;
+      color: white;
+    }
+    .config-button:hover {
+      background-color: #0b7dda;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    .debug-panel {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .debug-panel h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .debug-log {
+      height: 300px;
+      overflow-y: auto;
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 300px;
+    }
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    .tab-button {
+      padding: 8px 16px;
+      cursor: pointer;
+      background-color: #f1f1f1;
+      border: none;
+      outline: none;
+    }
+    .tab-button.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Inline Roger Assistant <span id="env-badge" class="environment-badge">DEVELOPMENT</span></h1>
+  
+  <div class="container">
+    <div class="card dev">
+      <h2>Roger - Business Development Assistant</h2>
+      <p>This version uses the inline configuration approach rather than an assistant ID.</p>
+
+      <div class="tab-buttons">
+        <button class="tab-button active" onclick="showTab('instructions')">Instructions</button>
+        <button class="tab-button" onclick="showTab('config')">Configuration</button>
+        <button class="tab-button" onclick="showTab('logs')">Logs</button>
+      </div>
+
+      <div id="instructions" class="tab-content">
+        <p>Click the button below to start a conversation with Roger using the inline configuration:</p>
+        <div class="buttons">
+          <button class="action-button" id="talk-to-inline-roger">Talk to Roger (Inline)</button>
+          <button class="config-button" id="view-config">View Configuration</button>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div id="config" class="tab-content" style="display:none;">
+        <h3>Configuration Preview</h3>
+        <pre id="config-preview"></pre>
+      </div>
+
+      <div id="logs" class="tab-content" style="display:none;">
+        <div class="debug-panel">
+          <h3>Debug Logs</h3>
+          <div class="debug-log" id="debug-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Environment configuration
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const environment = isLocalhost ? 'development' : 'production';
+    const baseUrl = isLocalhost ? 'http://localhost:3000' : '';
+    
+    // Update UI based on environment
+    document.getElementById('env-badge').textContent = environment.toUpperCase();
+    if (environment === 'production') {
+      document.getElementById('env-badge').style.backgroundColor = '#28a745';
+      Array.from(document.querySelectorAll('.card')).forEach(card => {
+        card.classList.remove('dev');
+      });
+    }
+
+    // Tab switching
+    function showTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+      });
+      
+      // Remove active class from all buttons
+      document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+      });
+      
+      // Show selected tab
+      document.getElementById(tabName).style.display = 'block';
+      
+      // Add active class to clicked button
+      document.querySelector(`.tab-button[onclick="showTab('${tabName}')"]`).classList.add('active');
+    }
+
+    // Debug logger
+    function logDebug(message, type = 'info') {
+      const debugLog = document.getElementById('debug-log');
+      const timestamp = new Date().toLocaleTimeString();
+      let styleClass = '';
+      
+      switch(type) {
+        case 'error':
+          styleClass = 'style="color: red; font-weight: bold;"';
+          break;
+        case 'success':
+          styleClass = 'style="color: green; font-weight: bold;"';
+          break;
+        case 'warning':
+          styleClass = 'style="color: orange; font-weight: bold;"';
+          break;
+        default:
+          styleClass = '';
+      }
+      
+      debugLog.innerHTML += `<div ${styleClass}>[${timestamp}] ${message}</div>`;
+      debugLog.scrollTop = debugLog.scrollHeight;
+      console.log(`[${timestamp}] ${message}`);
+    }
+
+    // Status tracking
+    const statusElement = document.getElementById('status');
+    
+    // Helper function to update status
+    function updateStatus(message, isError = false) {
+      statusElement.innerHTML = message;
+      statusElement.style.backgroundColor = isError ? '#ffebee' : '#f9f9f9';
+      statusElement.style.color = isError ? '#d32f2f' : '#333';
+      logDebug(message, isError ? 'error' : 'info');
+    }
+
+    // Create Roger assistant configuration
+    const rogerConfig = {
+      model: {
+        provider: "openai",
+        model: "gpt-4o",//do not change this model
+        temperature: 0.5,
+        messages: [
+          {
+            role: "system",
+            content: "[Identity]  \nYou are a virtual business development assistant named Roger for GrowthPartners, a B2B software solutions provider. Your goal is to identify qualified leads, understand their business challenges, and connect them with the appropriate sales representatives.\n\n[Style]  \n- Sound friendly and genuinely interested, with a consultative, solution-oriented approach.\n- Use a conversational business tone with natural contractions like we're, I'd, and they've.\n- Balance professionalism with approachable warmth, avoiding a pushy or aggressive tone.\n- Include natural speech patterns, such as thoughtful pauses and varied pacing, especially when discussing complex topics.\n\n[Response Guidelines]  \n- Keep initial responses under 30 words and expand when necessary to provide valuable information.\n- Ask one question at a time and actively listen, acknowledging and referencing the prospect's previous answers.\n- Use affirming and empathetic language, avoiding technical jargon unless initiated by the prospect. \n\n[Task & Goals]  \n1. **Introduction**  \n   - Start with a greeting and state the call's purpose.  \n   - Offer flexibility in timing if the prospect is busy.\n\n2. **Need Discovery**  \n   - Ask about the prospect's business, current systems, and challenges.\n   - Explore pain points, impacts, previous solutions, and industry specifics.\n\n3. **Solution Alignment**  \n   - Highlight relevant capabilities and success stories based on shared information.\n   - Differentiate GrowthPartners' offerings from competitors.\n\n4. **Qualification Assessment**  \n   - Discuss decision timeline, budget, decision process, and success criteria for new solutions.\n\n5. **Next Steps**  \n   - For qualified prospects, arrange a follow-up with a sales representative.\n   - For prospects needing nurturing, suggest sharing additional information and scheduling later contact.\n   - For unqualified leads, politely decline further steps but leave the door open for future engagement.\n\n[Error Handling / Fallback]  \n- If unclear responses are given, ask clarifying questions.\n- If a conversation goes off track, gently guide it back to relevant topics.\n- In case of technical issues, apologize and recap the last clear point before proceeding.\n- Respectfully handle skeptics by acknowledging concerns, asking about specific objections, and providing proof points or examples when possible.\n\nRemember to leave every prospect with a positive impression, whether they are a good fit now or potential leads in the future."
+          }
+        ],
+        functions: [
+          {
+            name: "getCharacterInspiration",
+            description: "Provides business information based on a given query.",
+            parameters: {
+              type: "object",
+              properties: {
+                inspiration: {
+                  type: "string",
+                  description: "The query or business topic to get information about."
+                },
+                assistantName: {
+                  type: "string",
+                  description: "The name of the assistant to use for the response.",
+                  default: "Roger"
+                }
+              },
+              required: ["inspiration"]
+            }
+          }
+        ]
+      },
+      voice: {
+        provider: "vapi",
+        voiceId: "Cole"
+      },
+      serverUrl: "https://voice-agent-project1-k9o8ywldi-schuttpjs-projects.vercel.app/api/getCharacterInspiration",
+      firstMessage: "Hello, this is Roger. Do you have a few minutes to chat about how we might be able to help you?",
+      endCallMessage: "Thank you for taking the time to discuss your needs with me today. Our team will be in touch with more information soon. Have a great day!"
+    };
+
+    // Button configuration
+    const buttonConfig = {
+      position: "bottom-right", 
+      offset: "40px", 
+      width: "60px", 
+      height: "60px", 
+      idle: {
+        color: "#4287F5",
+        type: "round", 
+        icon: "https://unpkg.com/lucide-static@0.321.0/icons/phone.svg"
+      },
+      loading: {
+        color: "#92b4f3",
+        type: "round", 
+        icon: "https://unpkg.com/lucide-static@0.321.0/icons/loader-2.svg"
+      },
+      active: {
+        color: "#ff0000",
+        type: "round", 
+        icon: "https://unpkg.com/lucide-static@0.321.0/icons/phone-off.svg"
+      }
+    };
+
+    // Display the configuration in the preview area
+    document.getElementById('config-preview').textContent = JSON.stringify({
+      assistant: rogerConfig,
+      config: buttonConfig
+    }, null, 2);
+
+    // View configuration button
+    document.getElementById('view-config').addEventListener('click', function() {
+      showTab('config');
+    });
+
+    // Load Vapi SDK
+    async function loadVapiSDK() {
+      if (window.vapiSDK) {
+        logDebug('Vapi SDK already loaded');
+        return window.vapiSDK;
+      }
+      
+      logDebug('Loading Vapi SDK...');
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js";
+        script.async = true;
+        script.onload = () => {
+          logDebug('Vapi SDK loaded successfully');
+          resolve(window.vapiSDK);
+        };
+        script.onerror = () => {
+          const error = 'Failed to load Vapi SDK';
+          logDebug(error, 'error');
+          reject(new Error(error));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    // Call Roger with inline configuration
+    document.getElementById('talk-to-inline-roger').addEventListener('click', async function() {
+      try {
+        showTab('logs');
+        updateStatus("Initializing Roger...");
+        logDebug('Initializing Roger with inline configuration...');
+        
+        // Check if we're in a secure context
+        if (window.location.protocol !== 'https:' && !isLocalhost) {
+          throw new Error('HTTPS is required for production environment');
+        }
+        
+        const vapiSDK = await loadVapiSDK();
+        if (!vapiSDK) {
+          throw new Error("Failed to initialize Vapi SDK");
+        }
+        
+        logDebug('SDK Initialized, preparing configuration...');
+        
+        // Your public API key from Vapi dashboard
+        const apiKey = "f27a9656-0e77-4a48-8bd8-7310c05a13c3";
+        
+        // Log that we're about to start
+        logDebug(`Starting call with server URL: ${rogerConfig.serverUrl}`);
+        logDebug(`API Key: ${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 5)}`);
+        
+        // Debugging info
+        if (environment === 'development') {
+          logDebug(`Headers: ${JSON.stringify(rogerConfig.headers)}`);
+          logDebug(`Using CORS mode: ${isLocalhost ? 'cors' : 'same-origin'}`);
+        }
+        
+        const vapiInstance = vapiSDK.run({
+          apiKey: apiKey,
+          assistant: rogerConfig,
+          config: buttonConfig,
+          mode: 'cors',
+          headers: {
+            "x-vapi-signature": "7d51b737-e34b-4777-b485-ba387cf24c50"
+          }
+        });
+        
+        // Add event listeners for debugging
+        vapiInstance.on('call-start', () => {
+          logDebug('Roger call has started', 'success');
+          updateStatus("Call started");
+        });
+        
+        vapiInstance.on('call-end', () => {
+          logDebug('Roger call has ended');
+          updateStatus("Call ended");
+        });
+        
+        vapiInstance.on('error', (error) => {
+          const errorMsg = error.message || JSON.stringify(error);
+          logDebug(`Roger error event: ${errorMsg}`, 'error');
+          updateStatus(`Error: ${errorMsg}`, true);
+          console.error("Roger error event:", error);
+        });
+        
+        vapiInstance.on('speech-start', () => {
+          logDebug('Roger is speaking');
+        });
+        
+        vapiInstance.on('speech-end', () => {
+          logDebug('Roger finished speaking');
+        });
+        
+        vapiInstance.on('volume-level', (volume) => {
+          // Uncomment to log volume levels (can be noisy in the logs)
+          // logDebug(`Volume level: ${volume}`);
+        });
+        
+        vapiInstance.on('message', (message) => {
+          logDebug(`Message received: ${JSON.stringify(message)}`);
+        });
+        
+        updateStatus("Call initiated with Roger");
+        logDebug('Roger call initiated successfully', 'success');
+      } catch (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        updateStatus(`Error: ${errorMsg}`, true);
+        logDebug(`Error initializing Roger: ${errorMsg}`, 'error');
+        console.error("Error:", error);
+      }
+    });
+
+    // Initialize the page
+    (function init() {
+      logDebug(`Initialized in ${environment} mode`);
+      
+      // Status message
+      updateStatus(`Ready in ${environment} mode. API endpoint: ${baseUrl}/api/getCharacterInspiration`);
+      
+      // Load SDK in background
+      loadVapiSDK().catch(err => {
+        console.error('Failed to pre-load Vapi SDK:', err);
+      });
+    })();
+  </script>
+</body>
+</html> 

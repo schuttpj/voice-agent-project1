@@ -1,0 +1,8 @@
+{
+  "voice": {
+    "provider": "vapi",
+    "voiceId": "Cole"
+  },
+  "firstMessage": "Hello, this is Roger. Do you have a few minutes to chat about how we might be able to help you?",
+  "endCallMessage": "Thank you for taking the time to discuss your needs with me today. Our team will be in touch with more information soon. Have a great day!"
+} 

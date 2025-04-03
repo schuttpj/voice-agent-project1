@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { getCharacterInspiration } from "../functions/getCharacterInspiration";
+import { getAssistantResponse } from "../functions/getAssistantResponse";
 
 // Environment variables
 const API_SECRET = process.env.API_SECRET || "vapi-voice-agent-secret";
@@ -50,7 +50,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     console.log(`[${ENVIRONMENT}] Processing request with inspiration: "${inspiration}" and assistantName: "${assistantName || 'default'}"`);
 
     // Call the function with optional assistantName
-    const result = await getCharacterInspiration({ 
+    const result = await getAssistantResponse({ 
       inspiration,
       assistantName // Pass the assistantName if provided
     });

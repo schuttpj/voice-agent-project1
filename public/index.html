@@ -143,6 +143,7 @@
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const environment = isLocalhost ? 'development' : 'production';
     const baseUrl = isLocalhost ? 'http://localhost:3000' : '';
+    let vapiApiKey = '';
     
     // Update UI based on environment
     document.getElementById('env-badge').textContent = environment.toUpperCase();
@@ -152,6 +153,25 @@
       Array.from(document.querySelectorAll('.assistant-card')).forEach(card => {
         card.classList.remove('dev');
       });
+    }
+
+    // Get API key from server first
+    async function getApiKey() {
+      try {
+        const response = await fetch(`${baseUrl}/api/getVapiKey`);
+        const data = await response.json();
+        if (data.apiKey) {
+          vapiApiKey = data.apiKey;
+          logDebug('Successfully retrieved API key');
+          return data.apiKey;
+        } else {
+          throw new Error('No API key in response');
+        }
+      } catch (error) {
+        logDebug(`Failed to get API key: ${error.message}`);
+        console.error('Failed to get API key:', error);
+        return null;
+      }
     }
 
     // Debug logger
@@ -224,7 +244,7 @@
         const vapiSDK = await loadVapiSDK();
         
         vapiSDK.run({
-          apiKey: "f27a9656-0e77-4a48-8bd8-7310c05a13c3",
+          apiKey: "f27a9656-0e77-4a48-8bd8-7310c05a13c3", // Direct key without prefix
           assistant: {
             model: {
               provider: "openai",
@@ -286,48 +306,36 @@
       try {
         const vapiSDK = await loadVapiSDK();
         
-        vapiSDK.run({
-          apiKey: "f27a9656-0e77-4a48-8bd8-7310c05a13c3",
-          assistant: {
-            model: {
-              provider: "openai",
-              model: "gpt-4o",
-              systemPrompt: "You are Roger, a virtual business development assistant",
-              functions: [{
-                name: "getCharacterInspiration",
-                description: "Provides business information",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    inspiration: {
-                      type: "string",
-                      description: "The business query"
-                    },
-                    assistantName: {
-                      type: "string",
-                      description: "The assistant name",
-                      default: "Roger"
-                    }
-                  },
-                  required: ["inspiration"]
-                }
-              }]
-            },
-            voice: {
-              provider: "vapi",
-              voiceId: "Cole"
-            },
-            serverUrl: `${baseUrl}/api/getCharacterInspiration`,
-            headers: {
-              "x-vapi-signature": "vapi-voice-agent-secret"
-            },
-            firstMessage: "Hello, this is Roger. How can I help with your business needs?"
-          },
+        const vapiInstance = vapiSDK.run({
+          apiKey: "f27a9656-0e77-4a48-8bd8-7310c05a13c3", // Direct key without prefix
+          assistant: "d10f09d4-b2d0-4f88-9f6d-527332977cc7", // Use Roger's ID instead of inline config
           config: {
             position: "bottom-left",
             idle: { color: "#4287F5" },
             active: { color: "#FF0000" }
           }
+        });
+        
+        // Add event listeners for debugging
+        vapiInstance.on('call-start', () => {
+          logDebug('Roger call has started');
+          rogerStatus.innerHTML += "<p>Call started</p>";
+        });
+        
+        vapiInstance.on('call-end', () => {
+          logDebug('Roger call has ended');
+          rogerStatus.innerHTML += "<p>Call ended</p>";
+        });
+        
+        vapiInstance.on('error', (error) => {
+          const errorMsg = error.message || JSON.stringify(error);
+          logDebug(`Roger error event: ${errorMsg}`);
+          rogerStatus.innerHTML += `<p>Error event: ${errorMsg}</p>`;
+          console.error("Roger error event:", error);
+        });
+        
+        vapiInstance.on('message', (message) => {
+          logDebug(`Roger message: ${JSON.stringify(message)}`);
         });
         
         rogerStatus.innerHTML = "<p>Call initiated with Roger</p>";
